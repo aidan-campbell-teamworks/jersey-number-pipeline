@@ -78,6 +78,7 @@ def setup_pose(root):
        # clone source repo
         os.chdir(root)
         os.system(f"git clone --recurse-submodules {src_url} {os.path.join(rep_path,repo_name)}")
+        os.system(f"mkdir {os.path.join(rep_path,repo_name, 'checkpoints')}")
 
     os.chdir(root)
     if not env_name in get_conda_envs():
@@ -140,7 +141,7 @@ def download_models(root_dir, dataset):
 
 def setup_sam(root_dir):
     os.chdir(root_dir)
-    repo_name = 'sam2'
+    repo_name = 'sam'
     src_url = 'https://github.com/davda54/sam'
 
     if not repo_name in os.listdir(root_dir):
