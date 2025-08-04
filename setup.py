@@ -25,11 +25,14 @@ def get_conda_envs():
     stream = os.popen("conda env list")
     output = stream.read()
     a = output.split()
-    a.remove("*")
-    a.remove("#")
-    a.remove("#")
-    a.remove("conda")
-    a.remove("environments:")
+    try:
+        a.remove("*")
+        a.remove("#")
+        a.remove("#")
+        a.remove("conda")
+        a.remove("environments:")
+    except:
+        pass
     return a[::2]
 ###########################################
 
@@ -48,11 +51,11 @@ def setup_reid(root):
         models_folder_path = os.path.join(rep_path, repo_name, "models")
         os.system(f"mkdir {models_folder_path}")
 
-        url = "https://drive.google.com/uc?export=download&id=1w9yzdP_5oJppGIM4gs3cETyLujanoHK8&confirm=t&uuid=fed3cb8a-1fad-40bd-8922-c41ededc93ae&at=ALgDtsxiC0WTza4g47gqC5VPyWg4:1679009047787"
+        url = "https://drive.usercontent.google.com/download?id=1w9yzdP_5oJppGIM4gs3cETyLujanoHK8&export=download&authuser=1&confirm=t"
         save_path = os.path.join(models_folder_path, "dukemtmcreid_resnet50_256_128_epoch_120.ckpt")
         urllib.request.urlretrieve(url, save_path)
 
-        url = "https://drive.google.com/uc?export=download&id=1ZFywKEytpyNocUQd2APh2XqTe8X0HMom&confirm=t&uuid=450bb8b7-b3d0-4465-b0c9-bb6f066b205e&at=ALgDtswylGfYgY71u8ZmWx4CfhJX:1679008688985"
+        url = "https://drive.usercontent.google.com/download?id=1ZFywKEytpyNocUQd2APh2XqTe8X0HMom&export=download&authuser=1&confirm=t"
         save_path = os.path.join(models_folder_path, "market1501_resnet50_256_128_epoch_120.ckpt")
         urllib.request.urlretrieve(url, save_path)
 
@@ -78,7 +81,7 @@ def setup_pose(root):
        # clone source repo
         os.chdir(root)
         os.system(f"git clone --recurse-submodules {src_url} {os.path.join(rep_path,repo_name)}")
-        os.system(f"mkdir {os.path.join(rep_path,repo_name, 'checkpoints')}")
+        os.system(f"mkdir {os.path.join(rep_path, repo_name, 'checkpoints')}")
 
     os.chdir(root)
     if not env_name in get_conda_envs():
