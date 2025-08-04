@@ -156,9 +156,11 @@ def download_data(root_dir):
     if not os.path.exists(os.path.join(root_dir, "data", "SoccerNet")):
         mySNdl = SNdl(LocalDirectory=os.path.join(root_dir, "data"))
         mySNdl.downloadDataTask(task="jersey-2023", split=["train","test"])
-        os.system(f"mv {os.path.join(root_dir, "data", "jersey-2023")} {os.path.join(root_dir, "data", "SoccerNet")}")
-        os.system(f"unzip {os.path.join(root_dir, "data", "SoccerNet", "train.zip")} -d {os.path.join(root_dir, "data", "SoccerNet")}")
-        os.system(f"unzip {os.path.join(root_dir, "data", "SoccerNet", "test.zip")} -d {os.path.join(root_dir, "data", "SoccerNet")}")
+        os.system(f"unzip {os.path.join(root_dir, "data", "jersey-2023", "train.zip")} -d {os.path.join(root_dir, "data", "SoccerNet")}")
+        os.system(f"unzip {os.path.join(root_dir, "data", "jersey-2023", "test.zip")} -d {os.path.join(root_dir, "data", "SoccerNet")}")
+        os.system(f"rm -rf {os.path.join(root_dir, "data", "jersey-2023")}")
+        os.system(f"rm -f {os.path.join(root_dir, "data", "SoccerNet", "train", "images", ".DS_Store")}")
+        os.system(f"rm -f {os.path.join(root_dir, "data", "SoccerNet", "test", "images", ".DS_Store")}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
