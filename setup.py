@@ -4,6 +4,7 @@ import json
 import urllib.request
 import gdown
 import argparse
+from SoccerNet.Downloader import SoccerNetDownloader as SNdl
 
 
 ###### common setup utils ##############
@@ -151,6 +152,13 @@ def setup_sam(root_dir):
         # clone source repo
         os.system(f"git clone --recurse-submodules {src_url} {os.path.join(root_dir, repo_name)}")
 
+def download_data(root_dir):
+    if not os.path.exists(os.path.join(root_dir, "data", "SoccerNet")):
+        mySNdl = SNdl(LocalDirectory=os.path.join(root_dir, "data"))
+        mySNdl.downloadDataTask(task="jersey-2023", split=["train","test"])
+        os.system(f"mv {os.path.join(root_dir, "data", "jersey-2023")} {os.path.join(root_dir, "data", "SoccerNet")}")
+        os.system(f"unzip {os.path.join(root_dir, "data", "SoccerNet", "train.zip")} -d {os.path.join(root_dir, "data", "SoccerNet")}")
+        os.system(f"unzip {os.path.join(root_dir, "data", "SoccerNet", "test.zip")} -d {os.path.join(root_dir, "data", "SoccerNet")}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -170,6 +178,7 @@ if __name__ == '__main__':
     if not args.dataset == 'Hockey':
         setup_reid(root_dir)
         download_models(root_dir, 'SoccerNet')
+        download_data(root_dir)
 
     if not args.dataset == 'SoccerNet':
         download_models(root_dir, 'Hockey')
