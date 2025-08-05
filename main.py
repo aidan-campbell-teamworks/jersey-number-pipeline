@@ -1,11 +1,11 @@
 import argparse
 import os
-import legibility_classifier as lc
+from jersey_number_pipeline import legibility_classifier as lc
 import numpy as np
 import json
-import helpers
+from jersey_number_pipeline import helpers
 from tqdm import tqdm
-import configuration as config
+from jersey_number_pipeline import configuration as config
 from pathlib import Path
 
 def get_soccer_net_raw_legibility_results(args, use_filtered = True, filter = 'gauss', exclude_balls=True):

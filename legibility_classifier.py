@@ -6,20 +6,20 @@ import torch.optim as optim
 from torch.optim import lr_scheduler
 import torch.backends.cudnn as cudnn
 from torch.utils.data import Dataset
-from jersey_number_dataset import JerseyNumberLegibilityDataset, UnlabelledJerseyNumberLegibilityDataset, TrackletLegibilityDataset
-from networks import LegibilityClassifier, LegibilitySimpleClassifier, LegibilityClassifier34, LegibilityClassifierTransformer
+from jersey_number_pipeline.jersey_number_dataset import JerseyNumberLegibilityDataset, UnlabelledJerseyNumberLegibilityDataset, TrackletLegibilityDataset
+from jersey_number_pipeline.networks import LegibilityClassifier, LegibilitySimpleClassifier, LegibilityClassifier34, LegibilityClassifierTransformer
 
 import time
 import copy
 import argparse
 import os
-import configuration as cfg
+from jersey_number_pipeline import configuration as cfg
 import time
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
 
-from sam.sam import SAM
+from jersey_number_pipeline.sam.sam import SAM
 
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     since = time.time()
