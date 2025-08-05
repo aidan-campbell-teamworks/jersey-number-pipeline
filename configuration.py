@@ -94,5 +94,24 @@ dataset = {'SoccerNet':
                  'legibility_model_url':  "https://drive.google.com/uc?id=1RfxINtZ_wCNVF8iZsiMYuFOP7KMgqgDp",
                  'str_model': 'models/parseq_epoch=3-step=95-val_accuracy=98.7903-val_NED=99.3952.ckpt',
                  'str_model_url': "https://drive.google.com/uc?id=1FyM31xvSXFRusN0sZH0EWXoHwDfB9WIE",
+            },
+            "Football": {
+                'root_dir': 'data/Football',
+                'working_dir': 'data/out/FootballResults',
+
+                'images': 'images',
+                'gt': 'football_gt.json',
+                'feature_output_folder': 'features',
+                'sim_filtered': 'main_subject_0.4.json',
+                'gauss_filtered': 'main_subject_gauss_th=3.5_r=3.json',
+                'illegible_result': 'illegible.json',
+                'legible_result': 'legible.json',
+                'raw_legible_result': 'raw_legible_resnet34.json',
+                'pose_input_json': 'pose_input.json',
+                'pose_output_json': 'pose_results.json',
+                'crops_folder': 'crops',
+
+                'jersey_id_result': 'jersey_id_results.json',
+                'final_result': 'final_results.json'
             }
         }
