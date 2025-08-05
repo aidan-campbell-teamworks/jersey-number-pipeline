@@ -65,7 +65,9 @@ def setup_reid(root):
         cwd = os.getcwd()
         os.chdir(os.path.join(rep_path, repo_name))
         os.system(f"conda run --live-stream -n {env_name} conda install --name {env_name} pip")
-        os.system(f"conda run --live-stream -n {env_name} pip install -r requirements.txt")
+        os.system(f"conda run --live-stream -n {env_name} pip install einops mlflow opencv-python tqdm yacs")
+        os.system(f"conda run --live-stream -n {env_name} pip install torch==1.13.0+cu117 torchvision==0.14.0+cu117 torchaudio==0.13.0 --extra-index-url https://download.pytorch.org/whl/cu117")
+        os.system(f"conda run --live-stream -n {env_name} pip install pytorch-lightning==1.9.5")
 
         os.chdir(cwd)
 
@@ -159,8 +161,6 @@ def download_data(root_dir):
         os.system(f"unzip {os.path.join(root_dir, "data", "jersey-2023", "train.zip")} -d {os.path.join(root_dir, "data", "SoccerNet")}")
         os.system(f"unzip {os.path.join(root_dir, "data", "jersey-2023", "test.zip")} -d {os.path.join(root_dir, "data", "SoccerNet")}")
         os.system(f"rm -rf {os.path.join(root_dir, "data", "jersey-2023")}")
-        os.system(f"rm -f {os.path.join(root_dir, "data", "SoccerNet", "train", "images", ".DS_Store")}")
-        os.system(f"rm -f {os.path.join(root_dir, "data", "SoccerNet", "test", "images", ".DS_Store")}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
