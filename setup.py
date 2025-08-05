@@ -91,6 +91,7 @@ def setup_pose(root):
 
         os.system(f"conda run --live-stream -n {env_name} conda install --name {env_name} pip")
         os.system(f"conda run --live-stream -n {env_name} pip install  mmcv-full==1.4.8 -f https://download.openmmlab.com/mmcv/dist/cu111/torch1.9.0/index.html")
+        os.system(f"conda run --live-stream -n {env_name} pip install torch==1.13.0+cu117 torchvision==0.14.0+cu117 --extra-index-url https://download.pytorch.org/whl/cu117")
 
         os.chdir(os.path.join(root, rep_path, "ViTPose"))
         os.system(f"conda run --live-stream -n {env_name} pip install -v -e .")
@@ -122,7 +123,7 @@ def setup_str(root):
 
 def download_models_common(root_dir):
     repo_name = "ViTPose"
-    rep_path = "./pose"
+    rep_path = os.path.join(root_dir, "pose")
 
     url = cfg.dataset['SoccerNet']['pose_model_url']
     models_folder_path = os.path.join(rep_path, repo_name, "checkpoints")
@@ -130,6 +131,7 @@ def download_models_common(root_dir):
         os.system(f"mkdir {models_folder_path}")
     save_path = os.path.join(models_folder_path, "vitpose-h.pth")
     if not os.path.isfile(save_path):
+        print(f"DOWNLOADING MODEL TO {root_dir} / {save_path}")
         gdown.download(url, save_path)
 
 def download_models(root_dir, dataset):
@@ -181,7 +183,7 @@ if __name__ == '__main__':
     if not args.dataset == 'Hockey':
         setup_reid(root_dir)
         download_models(root_dir, 'SoccerNet')
-        download_data(root_dir)
+        # download_data(root_dir)
 
     if not args.dataset == 'SoccerNet':
         download_models(root_dir, 'Hockey')
