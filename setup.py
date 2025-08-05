@@ -84,7 +84,6 @@ def setup_pose(root):
        # clone source repo
         os.chdir(root)
         os.system(f"git clone --recurse-submodules {src_url} {os.path.join(rep_path,repo_name)}")
-        os.system(f"mkdir {os.path.join(rep_path, repo_name, 'checkpoints')}")
 
     os.chdir(root)
     if not env_name in get_conda_envs():
@@ -129,7 +128,7 @@ def download_models_common(root_dir):
     models_folder_path = os.path.join(rep_path, repo_name, "checkpoints")
     if not os.path.exists(models_folder_path):
         os.system(f"mkdir {models_folder_path}")
-    save_path = os.path.join(rep_path, "ViTPose", "checkpoints", "vitpose-h.pth")
+    save_path = os.path.join(models_folder_path, "vitpose-h.pth")
     if not os.path.isfile(save_path):
         gdown.download(url, save_path)
 
@@ -161,6 +160,8 @@ def download_data(root_dir):
         os.system(f"unzip {os.path.join(root_dir, "data", "jersey-2023", "train.zip")} -d {os.path.join(root_dir, "data", "SoccerNet")}")
         os.system(f"unzip {os.path.join(root_dir, "data", "jersey-2023", "test.zip")} -d {os.path.join(root_dir, "data", "SoccerNet")}")
         os.system(f"rm -rf {os.path.join(root_dir, "data", "jersey-2023")}")
+        # remove .DS_Store files on MacOS
+        os.system(f"find {os.path.join(root_dir, "data", "SoccerNet")} -name '.DS_Store' -type f -delete")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
