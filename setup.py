@@ -183,7 +183,7 @@ if __name__ == '__main__':
     if not args.dataset == 'Hockey':
         setup_reid(root_dir)
         download_models(root_dir, 'SoccerNet')
-        # download_data(root_dir)
+        download_data(root_dir)
 
     if not args.dataset == 'SoccerNet':
         download_models(root_dir, 'Hockey')
