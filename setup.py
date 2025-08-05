@@ -179,11 +179,12 @@ if __name__ == '__main__':
     download_models_common(root_dir)
     setup_str(root_dir)
 
-    #SoccerNet only
-    if not args.dataset == 'Hockey':
+    if args.dataset == 'SoccerNet':
         setup_reid(root_dir)
         download_models(root_dir, 'SoccerNet')
         download_data(root_dir)
-
-    if not args.dataset == 'SoccerNet':
+    elif args.dataset == 'Hockey':
         download_models(root_dir, 'Hockey')
+    elif args.dataset == 'Football':
+        setup_reid(root_dir)
+        download_models(root_dir, 'Football')
