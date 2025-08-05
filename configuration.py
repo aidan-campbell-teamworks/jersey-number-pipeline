@@ -112,7 +112,7 @@ dataset = {'SoccerNet':
                 'crops_folder': 'crops',
 
                 'jersey_id_result': 'jersey_id_results.json',
-                'final_result': 'final_results.json'
+                'final_result': 'final_results.json',
 
                 'numbers_data': 'lmdb',
 
