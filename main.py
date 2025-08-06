@@ -162,7 +162,7 @@ def get_soccer_net_legibility_results(args, use_filtered = False, filter = 'sim'
 
 
 def generate_json_for_football_pose_estimator(legible = None):
-    path_to_images = os.path.join(os.getcwd(), config.dataset['Football']['root_dir'], config.dataset['SoccerNet']['images'])
+    path_to_images = os.path.join(os.getcwd(), config.dataset['Football']['root_dir'], config.dataset['Football']['images'])
     output_json = os.path.join(config.dataset['Football']['working_dir'], config.dataset['Football']['pose_input_json'])
     
     all_files = []
@@ -252,6 +252,7 @@ def train_parseq(args):
 
 def football_pipeline(pipeline):
     success = True
+    legible_dict = None
     Path(config.dataset["Football"]["working_dir"]).mkdir(parents=True, exist_ok=True)
     image_dir = os.path.join(config.dataset["Football"]["root_dir"], config.dataset["Football"]["images"])
     gt_path = os.path.join(config.dataset["Football"]["root_dir"], config.dataset["Football"]["gt"])
@@ -291,7 +292,7 @@ def football_pipeline(pipeline):
     if pipeline["legible"] and success:
         print("Classifying Legibility:")
         try:
-            legible_dict, illegible_tracklets = get_football_legibility_results(use_filtered=True, filter="gauss")
+            legible_dict, illegible_tracklets = get_football_legibility_results(use_filtered=False, filter="gauss")
         except Exception as error:
             print(f"Failed to run legibility classifier:{error}")
             success = False
@@ -321,7 +322,7 @@ def football_pipeline(pipeline):
                 with open(full_legibile_path, "r") as openfile:
                     # Reading from json file
                     legible_dict = json.load(openfile)
-            generate_json_for_football_pose_estimator(legible = legible_dict)
+            generate_json_for_football_pose_estimator()#legible = legible_dict)
         except Exception as e:
             print(e)
             success = False
@@ -335,20 +336,25 @@ def football_pipeline(pipeline):
             print("Detecting pose")
             command = f"conda run -n {config.pose_env} python3 pose.py {config.pose_home}/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_huge_coco_256x192.py \
                 {config.pose_home}/checkpoints/vitpose-h.pth --img-root / --json-file {input_json} \
-                --out-json {output_json}"
+                --out-json {output_json} --out-img-root {os.path.join(config.dataset["Football"]["working_dir"], "pose_results")}"
             success = os.system(command) == 0
             print("Done detecting pose")
 
+
+    # all_legible = []
+    # for directory in os.listdir(image_dir):
+    #     track_dir = os.path.join(image_dir, directory)
+    #     all_legible.extend(os.listdir(track_dir))
 
     #5. generate cropped images
     if pipeline["crops"] and success:
         print("Generate crops")
         try:
             Path(crops_destination_dir).mkdir(parents=True, exist_ok=True)
-            if legible_results is None:
+            if legible_dict is None:
                 with open(full_legibile_path, "r") as outfile:
-                    legible_results = json.load(outfile)
-            helpers.generate_crops(output_json, crops_destination_dir, legible_results)
+                    legible_dict = json.load(outfile)
+            helpers.generate_crops(output_json, crops_destination_dir, legible_dict)
         except Exception as e:
             print(e)
             success = False
@@ -591,6 +597,17 @@ if __name__ == '__main__':
                        "str": True}
             args.pipeline = actions
             hockey_pipeline(args)
+        elif args.dataset == 'Football':
+            pipeline = {"feat": True,
+                       "filter": False,
+                       "legible": True,
+                       "legible_eval": True,
+                       "pose": True,
+                       "crops": True,
+                       "str": True,
+                       "combine": True,
+                       "eval": True}
+            football_pipeline(pipeline)
         else:
             print("Unknown dataset")
     else:

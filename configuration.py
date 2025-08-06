@@ -96,14 +96,14 @@ dataset = {'SoccerNet':
                  'str_model_url': "https://drive.google.com/uc?id=1FyM31xvSXFRusN0sZH0EWXoHwDfB9WIE",
             },
             "Football": {
-                'root_dir': 'data/Football',
-                'working_dir': 'data/out/FootballResults',
+                'root_dir': '../data/Football',
+                'working_dir': 'data/FootballResults',
 
                 'images': 'images',
                 'gt': 'football_gt.json',
-                'feature_output_folder': 'features',
+                'feature_output_folder': '',
                 'sim_filtered': 'main_subject_0.4.json',
-                'gauss_filtered': 'main_subject_gauss_th=3.5_r=3.json',
+                'gauss_filtered': 'main_subject_gauss_th=3.5_r=1.json',
                 'illegible_result': 'illegible.json',
                 'legible_result': 'legible.json',
                 'raw_legible_result': 'raw_legible_resnet34.json',
@@ -114,14 +114,15 @@ dataset = {'SoccerNet':
                 'jersey_id_result': 'jersey_id_results.json',
                 'final_result': 'final_results.json',
 
-                'numbers_data': 'lmdb',
+                'legibility_data': 'legibility_dataset',
+                 'numbers_data': 'jersey_number_dataset/jersey_numbers_lmdb',
 
-                'legibility_model': "models/legibility_resnet34_soccer_20240215.pth",
+                'legibility_model': "models/legibility_resnet34_hockey_20240201.pth",
                 'legibility_model_arch': "resnet34",
 
                 'legibility_model_url':  "https://drive.google.com/uc?id=18HAuZbge3z8TSfRiX_FzsnKgiBs-RRNw",
                 'pose_model_url': 'https://drive.google.com/uc?id=1A3ftF118IcxMn_QONndR-8dPWpf7XzdV',
-                'str_model': 'models/parseq_epoch=24-step=2575-val_accuracy=95.6044-val_NED=96.3255.ckpt',
+                'str_model': 'models/parseq_epoch=3-step=95-val_accuracy=98.7903-val_NED=99.3952.ckpt',
 
                 #'str_model': 'pretrained=parseq',
                 'str_model_url': "https://drive.google.com/uc?id=1uRln22tlhneVt3P6MePmVxBWSLMsL3bm",

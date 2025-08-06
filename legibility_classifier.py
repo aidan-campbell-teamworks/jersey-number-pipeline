@@ -42,7 +42,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             running_corrects = 0
 
             # Iterate over data.
-            for inputs, labels, _ in dataloaders[phase]:
+            for inputs, labels, _ in tqdm(dataloaders[phase]):
                 #print(f"input and label sizes:{len(inputs), len(labels)}")
                 labels = labels.reshape(-1, 1)
                 labels = labels.type(torch.FloatTensor)
@@ -230,7 +230,7 @@ def train_model_with_sam_and_full_val(model, criterion, optimizer, num_epochs=25
             running_corrects = 0
 
             # Iterate over data.
-            for inputs, labels, _ in dataloaders[phase]:
+            for inputs, labels, _ in tqdm(dataloaders[phase]):
                 #print(f"input and label sizes:{len(inputs), len(labels)}")
                 labels = labels.reshape(-1, 1)
                 labels = labels.type(torch.FloatTensor)
@@ -327,10 +327,10 @@ def test_model(model, subset, result_path=None):
 
     print(f'Correct {TP+TN} out of {total}. Accuracy {100*(TP+TN)/total}%.')
     print(f'TP={TP}, TN={TN}, FP={FP}, FN={FN}')
-    Pr = TP / (TP + FP)
-    Recall = TP / (TP + FN)
+    Pr = TP / (TP + FP) if (TP + FP) > 0 else 0
+    Recall = TP / (TP + FN) if (TP + FN) > 0 else 0
     print(f"Precision={Pr}, Recall={Recall}")
-    print(f"F1={2*Pr*Recall/(Pr+Recall)}")
+    print(f"F1={2 * Pr * Recall / (Pr + Recall) if (Pr + Recall) > 0 else 0}")
 
     print(f"Accuracy {subset}:{epoch_acc}")
     print(f"{running_corrects}, {dataset_sizes[subset]}")

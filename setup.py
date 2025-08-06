@@ -167,7 +167,7 @@ def download_data(root_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('dataset', default='all', help="Options: all, SoccerNet, Hockey")
+    parser.add_argument('dataset', default='all', help="Options: all, SoccerNet, Hockey, Football")
 
     args = parser.parse_args()
 
