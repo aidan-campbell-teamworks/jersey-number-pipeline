@@ -131,7 +131,6 @@ def download_models_common(root_dir):
         os.system(f"mkdir {models_folder_path}")
     save_path = os.path.join(models_folder_path, "vitpose-h.pth")
     if not os.path.isfile(save_path):
-        print(f"DOWNLOADING MODEL TO {root_dir} / {save_path}")
         gdown.download(url, save_path)
 
 def download_models(root_dir, dataset):
@@ -188,3 +187,9 @@ if __name__ == '__main__':
     elif args.dataset == 'Football':
         setup_reid(root_dir)
         download_models(root_dir, 'Football')
+    else:
+        setup_reid(root_dir)
+        download_models(root_dir, 'SoccerNet')
+        download_models(root_dir, 'Hockey')
+        download_models(root_dir, 'Football')
+        download_data(root_dir)

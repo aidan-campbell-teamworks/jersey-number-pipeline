@@ -631,10 +631,10 @@ def evaluate_legibility(gt_path, illegible_path, legible_tracklets, soccer_ball_
 
     print(f'Correct {correct} out of {total}. Accuracy {100*correct/total}%.')
     print(f'TP={TP}, TN={TN}, FP={FP}, FN={FN}')
-    Pr = TP / (TP + FP)
-    Recall = TP / (TP + FN)
+    Pr = TP / (TP + FP) if (TP + FP) > 0 else 0
+    Recall = TP / (TP + FN) if (TP + FN) > 0 else 0
     print(f"Precision={Pr}, Recall={Recall}")
-    print(f"F1={2 * Pr * Recall / (Pr + Recall)}")
+    print(f"F1={2 * Pr * Recall / (Pr + Recall) if (Pr + Recall) > 0 else 0}")
 
 
 SKIP_ILLEGIBLE = False

@@ -253,7 +253,12 @@ def train_parseq(args):
 def football_pipeline(pipeline):
     success = True
     legible_dict = None
+    try:
+        os.chdir("jersey_number_pipeline")
+    except Exception as e:
+        print(f"Already in jersey_number_pipeline")
     Path(config.dataset["Football"]["working_dir"]).mkdir(parents=True, exist_ok=True)
+        
     image_dir = os.path.join(config.dataset["Football"]["root_dir"], config.dataset["Football"]["images"])
     gt_path = os.path.join(config.dataset["Football"]["root_dir"], config.dataset["Football"]["gt"])
     features_dir = os.path.join(config.dataset["Football"]["working_dir"],
