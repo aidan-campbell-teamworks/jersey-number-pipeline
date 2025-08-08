@@ -256,11 +256,13 @@ def football_pipeline(pipeline):
     try:
         os.chdir("jersey_number_pipeline")
     except Exception as e:
-        print(f"Already in jersey_number_pipeline")
+        print("Already in jersey_number_pipeline")
     Path(config.dataset["Football"]["working_dir"]).mkdir(parents=True, exist_ok=True)
         
     image_dir = os.path.join(config.dataset["Football"]["root_dir"], config.dataset["Football"]["images"])
-    gt_path = os.path.join(config.dataset["Football"]["root_dir"], config.dataset["Football"]["gt"])
+    gt_path = os.path.join(config.dataset["Football"]["root_dir"],
+                           config.dataset["Football"]["gt"],
+                           f"{pipeline['play']}_football_gt.json")
     features_dir = os.path.join(config.dataset["Football"]["working_dir"],
                                 config.dataset["Football"]["feature_output_folder"])
     crops_dir = os.path.join(config.dataset["Football"]["working_dir"], 
