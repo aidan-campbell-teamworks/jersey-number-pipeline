@@ -613,7 +613,8 @@ if __name__ == '__main__':
                        "crops": True,
                        "str": True,
                        "combine": True,
-                       "eval": True}
+                       "eval": True,
+                       "play": "28312_32"}
             football_pipeline(pipeline)
         else:
             print("Unknown dataset")
