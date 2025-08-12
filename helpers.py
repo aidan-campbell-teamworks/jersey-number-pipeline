@@ -653,11 +653,10 @@ def evaluate_results(consolidated_dict, gt_dict, full_results = None):
             continue
         if str(gt_dict[id]) == str(predicted):
             correct += 1
+            print(f"Player {id:2} T: number {predicted:2}")
         else:
-            #print(predicted, gt_dict[id])
             mistakes.append(id)
-        print(f"Player {id} {str(gt_dict[id]) == str(predicted)}: predicted {predicted}, expected{gt_dict[id]}")
-        total += 1
+            print(f"Player {id:2} F: predicted {predicted:2}, expected {gt_dict[id]:2}")
     print(f"Total number of trackslets: {total}, correct: {correct}, accuracy: {100.0 * correct/total}%")
     #print(f"Tracklets with mistakes: {mistakes}")
     illegible_mistake_count = 0

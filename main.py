@@ -7,6 +7,24 @@ from jersey_number_pipeline import helpers
 from tqdm import tqdm
 from jersey_number_pipeline import configuration as config
 from pathlib import Path
+import subprocess
+
+def run_in_conda(env_name: str, python_script: str, args: list[str], cwd: str | None = None) -> bool:
+    """
+    Run a python script in a conda environment.
+
+    Args:
+        env_name (str): The name of the conda environment to run the script in.
+        python_script (str): The path to the python script to run.
+        args (list[str]): The arguments to pass to the script.
+        cwd (str | None): The current working directory to run the script in.
+
+    Returns:
+        bool: True if the script ran successfully, False otherwise.
+    """
+    cmd = ["conda", "run", "--no-capture-output", "-n", env_name, "python3", python_script, *args]
+    result = subprocess.run(cmd, cwd=cwd, check=False)
+    return result.returncode == 0
 
 def get_soccer_net_raw_legibility_results(args, use_filtered = True, filter = 'gauss', exclude_balls=True):
     root_dir = config.dataset['SoccerNet']['root_dir']
@@ -284,22 +302,40 @@ def football_pipeline(pipeline):
     # 1. generate and store features for each image in each tracklet
     if pipeline["feat"]:
         print("Generate features")
-        command = f"conda run -n {config.reid_env} python3 {config.reid_script} --tracklets_folder {image_dir} --output_folder {features_dir}"
-        success = os.system(command) == 0
-        print("Done generating features")
+        # command = f"conda run -n {config.reid_env} python3 {config.reid_script} --tracklets_folder {image_dir} --output_folder {features_dir}"
+        # success = os.system(command) == 0
+        try:
+            Path(features_dir).mkdir(parents=True, exist_ok=True)
+            success = run_in_conda(
+                config.reid_env,
+                "centroid_reid.py",
+                ["--tracklets_folder", image_dir, "--output_folder", features_dir],
+                cwd=os.getcwd(),
+            )
+            print("Done generating features")
+        except Exception as error:
+            print(f"Failed to generate features: {error}")
+            success = False
 
     #2. identify and remove outliers based on features
     if pipeline["filter"] and success:
         print("Identify and remove outliers")
-        command = f"python3 gaussian_outliers.py --tracklets_folder {image_dir} --output_folder {features_dir}"
-        success = os.system(command) == 0
-        print("Done removing outliers")
+        # command = f"python3 gaussian_outliers.py --tracklets_folder {image_dir} --output_folder {features_dir}"
+        # success = os.system(command) == 0
+        try:
+            from jersey_number_pipeline import gaussian_outliers as _gaussian_outliers
+            _gaussian_outliers.get_main_subject(image_dir, features_dir)
+            print("Done removing outliers")
+            success = True
+        except Exception as error:
+            print(f"Failed to remove outliers: {error}")
+            success = False
 
     #3. pass all images through legibililty classifier and record results
     if pipeline["legible"] and success:
         print("Classifying Legibility:")
         try:
-            legible_dict, illegible_tracklets = get_football_legibility_results(use_filtered=False, filter="gauss")
+            legible_dict, illegible_tracklets = get_football_legibility_results(use_filtered=pipeline["filtered"], filter="gauss")
         except Exception as error:
             print(f"Failed to run legibility classifier:{error}")
             success = False
@@ -329,7 +365,10 @@ def football_pipeline(pipeline):
                 with open(full_legibile_path, "r") as openfile:
                     # Reading from json file
                     legible_dict = json.load(openfile)
-            generate_json_for_football_pose_estimator()#legible = legible_dict)
+            if pipeline["legibled"]:
+                generate_json_for_football_pose_estimator(legible = legible_dict)
+            else:
+                generate_json_for_football_pose_estimator()
         except Exception as e:
             print(e)
             success = False
@@ -341,11 +380,29 @@ def football_pipeline(pipeline):
         #4.5 run pose estimation and store results
         if success:
             print("Detecting pose")
-            command = f"conda run -n {config.pose_env} python3 pose.py {config.pose_home}/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_huge_coco_256x192.py \
-                {config.pose_home}/checkpoints/vitpose-h.pth --img-root / --json-file {input_json} \
-                --out-json {output_json} --out-img-root {os.path.join(config.dataset["Football"]["working_dir"], "pose_results")}"
-            success = os.system(command) == 0
-            print("Done detecting pose")
+            # command = f"conda run -n {config.pose_env} python3 pose.py {config.pose_home}/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_huge_coco_256x192.py \
+            #     {config.pose_home}/checkpoints/vitpose-h.pth --img-root / --json-file {input_json} \
+            #     --out-json {output_json} --out-img-root {os.path.join(config.dataset["Football"]["working_dir"], "pose_results")}"
+            # success = os.system(command) == 0
+            try:
+                out_img_root = os.path.join(config.dataset["Football"]["working_dir"], "pose_results")
+                success = run_in_conda(
+                    config.pose_env,
+                    "pose.py",
+                    [
+                        f"{config.pose_home}/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_huge_coco_256x192.py",
+                        f"{config.pose_home}/checkpoints/vitpose-h.pth",
+                        "--img-root", "/",
+                        "--json-file", input_json,
+                        "--out-json", output_json,
+                        "--out-img-root", out_img_root,
+                    ],
+                    cwd=os.getcwd(),
+                )
+                print("Done detecting pose")
+            except Exception as error:
+                print(f"Failed to detect pose: {error}")
+                success = False
 
 
     # all_legible = []
@@ -370,10 +427,26 @@ def football_pipeline(pipeline):
     #6. run STR system on all crops
     if pipeline["str"] and success:
         print("Predict numbers")
-        command = f"conda run -n {config.str_env} python3 str.py  {config.dataset["Football"]["str_model"]}\
-            --data_root={crops_dir} --batch_size=1 --inference --result_file {str_result_file}"
-        success = os.system(command) == 0
-        print("Done predict numbers")
+        # command = f"conda run -n {config.str_env} python3 str.py  {config.dataset["Football"]["str_model"]}\
+        #     --data_root={crops_dir} --batch_size=1 --inference --result_file {str_result_file}"
+        # success = os.system(command) == 0
+        try:
+            success = run_in_conda(
+                config.str_env,
+                "str.py",
+                [
+                    config.dataset["Football"]["str_model"],
+                    f"--data_root={crops_dir}",
+                    "--batch_size=1",
+                    "--inference",
+                    f"--result_file={str_result_file}",
+                ],
+                cwd=os.getcwd(),
+            )
+            print("Done predict numbers")
+        except Exception as error:
+            print(f"Failed to predict numbers: {error}")
+            success = False
 
     #7. combine tracklet results
     if pipeline["combine"] and success:
@@ -606,7 +679,7 @@ if __name__ == '__main__':
             hockey_pipeline(args)
         elif args.dataset == 'Football':
             pipeline = {"feat": True,
-                       "filter": False,
+                       "filter": True,
                        "legible": True,
                        "legible_eval": True,
                        "pose": True,
@@ -614,7 +687,9 @@ if __name__ == '__main__':
                        "str": True,
                        "combine": True,
                        "eval": True,
-                       "play": "28312_32"}
+                       "play": "28301_39",
+                       "filtered": False,
+                       "legibled": True}
             football_pipeline(pipeline)
         else:
             print("Unknown dataset")

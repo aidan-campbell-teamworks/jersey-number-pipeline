@@ -96,11 +96,11 @@ dataset = {'SoccerNet':
                  'str_model_url': "https://drive.google.com/uc?id=1FyM31xvSXFRusN0sZH0EWXoHwDfB9WIE",
             },
             "Football": {
-                'root_dir': '../data/Football',
+                'root_dir': '../data/Football/jnp/test',
                 'working_dir': 'data/FootballResults',
 
                 'images': 'images',
-                'gt': 'gt',
+                'gt': '../../gt',
                 'feature_output_folder': '',
                 'sim_filtered': 'main_subject_0.4.json',
                 'gauss_filtered': 'main_subject_gauss_th=3.5_r=1.json',
