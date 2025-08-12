@@ -100,7 +100,7 @@ dataset = {'SoccerNet':
                 'working_dir': 'data/FootballResults',
 
                 'images': 'images',
-                'gt': 'football_gt.json',
+                'gt': 'gt',
                 'feature_output_folder': '',
                 'sim_filtered': 'main_subject_0.4.json',
                 'gauss_filtered': 'main_subject_gauss_th=3.5_r=1.json',
