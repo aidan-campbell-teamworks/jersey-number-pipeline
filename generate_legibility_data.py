@@ -32,7 +32,7 @@ def main(num_images=None):
     img_dir = os.path.join(data_dir, "images")
     out_dir = os.path.join(data_dir, "legibility_data/images")
     os.makedirs(out_dir, exist_ok=True)
-    outfile = open(os.path.join(data_dir, "legibility_data/legibility_football_gt.txt"), "w")
+    outfile = open(os.path.join(data_dir, "legibility_data/legibility_football_gt.txt"), "a")
     files = os.listdir(img_dir)
     random.shuffle(files)
     if num_images is not None:
