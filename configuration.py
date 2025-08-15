@@ -96,12 +96,12 @@ dataset = {'SoccerNet':
                  'str_model_url': "https://drive.google.com/uc?id=1FyM31xvSXFRusN0sZH0EWXoHwDfB9WIE",
             },
             "Football": {
-                'root_dir': '../data/Football/jnp/test',
+                'root_dir': '../data/Football/jnp',
                 'working_dir': 'data/FootballResults',
 
-                'images': 'images',
-                'gt': '../../gt',
-                'feature_output_folder': '',
+                'images': 'test/images',
+                'gt': '../gt',
+                'feature_output_folder': 'test',
                 'sim_filtered': 'main_subject_0.4.json',
                 'gauss_filtered': 'main_subject_gauss_th=3.5_r=1.json',
                 'illegible_result': 'illegible.json',
@@ -115,7 +115,7 @@ dataset = {'SoccerNet':
                 'final_result': 'final_results.json',
 
                 'legibility_data': 'legibility_dataset',
-                'numbers_data': 'jersey_number_dataset/jersey_numbers_lmdb',
+                'numbers_data': 'football_lmdb/lmdb',
 
                 'legibility_model': "models/legibility_resnet34_hockey_20240201.pth",
                 'legibility_model_arch': "resnet34",

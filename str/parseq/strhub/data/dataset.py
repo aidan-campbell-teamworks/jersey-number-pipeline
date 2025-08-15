@@ -33,16 +33,13 @@ def build_tree_dataset(root: Union[PurePath, str], *args, **kwargs):
         kwargs.pop('root')  # prevent 'root' from being passed via kwargs
     except KeyError:
         pass
+
     root = Path(root).absolute()
     log.info(f'dataset root:\t{root}')
-    datasets = []
-    for mdb in glob.glob(str(root / '**/data.mdb'), recursive=True):
-        mdb = Path(mdb)
-        ds_name = str(mdb.parent.relative_to(root))
-        ds_root = str(mdb.parent.absolute())
-        dataset = LmdbDataset(ds_root, *args, **kwargs)
-        log.info(f'\tlmdb:\t{ds_name}\tnum samples: {len(dataset)}')
-        datasets.append(dataset)
+    ds_root = str(root)+"/JerseyNumbers"
+    dataset = LmdbDataset(ds_root, *args, **kwargs)
+    datasets = [dataset]
+    log.info(f'\tlmdb:\tJersey Numbers\tnum samples: {len(dataset)}')
     return ConcatDataset(datasets)
 
 
@@ -62,6 +59,7 @@ class LmdbDataset(Dataset):
         self.unlabelled = unlabelled
         self.transform = transform
         self.labels = []
+        self.image_paths = []
         self.filtered_index_list = []
         self.num_samples = self._preprocess_labels(charset, remove_whitespace, normalize_unicode,
                                                    max_label_len, min_image_dim)
@@ -83,14 +81,11 @@ class LmdbDataset(Dataset):
 
     def _preprocess_labels(self, charset, remove_whitespace, normalize_unicode, max_label_len, min_image_dim):
         charset_adapter = CharsetAdapter(charset)
-        with self._create_env() as env, env.begin() as txn:
-            num_samples = int(txn.get('num-samples'.encode()))
-            if self.unlabelled:
-                return num_samples
-            for index in range(num_samples):
-                index += 1  # lmdb starts with 1
-                label_key = f'label-{index:09d}'.encode()
-                label = txn.get(label_key).decode()
+        with open(f"{self.root}/football_gt.txt", "r") as f:
+            for index, line in enumerate(f):
+                index += 1 # lmdb starts with 1
+                image_path, label = line.strip().split(",")
+                
                 # Normally, whitespace is removed from the labels.
                 if remove_whitespace:
                     label = ''.join(label.split())
@@ -104,14 +99,9 @@ class LmdbDataset(Dataset):
                 # We filter out samples which don't contain any supported characters
                 if not label:
                     continue
-                # Filter images that are too small.
-                if min_image_dim > 0:
-                    img_key = f'image-{index:09d}'.encode()
-                    buf = io.BytesIO(txn.get(img_key))
-                    w, h = Image.open(buf).size
-                    if w < self.min_image_dim or h < self.min_image_dim:
-                        continue
+
                 self.labels.append(label)
+                self.image_paths.append(image_path)
                 self.filtered_index_list.append(index)
         return len(self.labels)
 
@@ -119,17 +109,11 @@ class LmdbDataset(Dataset):
         return self.num_samples
 
     def __getitem__(self, index):
-        if self.unlabelled:
-            label = index
-        else:
-            label = self.labels[index]
-            index = self.filtered_index_list[index]
+        label = self.labels[index]
+        image_path = f"{self.root}/images/{self.image_paths[index]}"
+        index = self.filtered_index_list[index]
 
-        img_key = f'image-{index:09d}'.encode()
-        with self.env.begin() as txn:
-            imgbuf = txn.get(img_key)
-        buf = io.BytesIO(imgbuf)
-        img = Image.open(buf).convert('RGB')
+        img = Image.open(image_path).convert('RGB')
 
         if self.transform is not None:
             img = self.transform(img)
