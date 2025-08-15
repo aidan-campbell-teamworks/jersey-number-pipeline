@@ -1,13 +1,20 @@
 import argparse
-import os
-from jersey_number_pipeline import legibility_classifier as lc
-import numpy as np
 import json
-from jersey_number_pipeline import helpers
-from tqdm import tqdm
-from jersey_number_pipeline import configuration as config
-from pathlib import Path
+import os
 import subprocess
+from pathlib import Path
+
+import numpy as np
+from tqdm import tqdm
+
+try:
+    from jersey_number_pipeline import configuration as config
+    from jersey_number_pipeline import helpers
+    from jersey_number_pipeline import legibility_classifier as lc
+except Exception as e:
+    import configuration as config
+    import helpers
+    import legibility_classifier as lc
 
 def run_in_conda(env_name: str, python_script: str, args: list[str], cwd: str | None = None) -> bool:
     """
@@ -100,7 +107,7 @@ def get_football_legibility_results(use_filtered = False, filter = "sim"):
         track_dir = os.path.join(path_to_images, directory)
         images = filtered[directory] if use_filtered else os.listdir(track_dir)
         images_full_path = [os.path.join(track_dir, x) for x in images]
-        track_results = lc.run(images_full_path, config.dataset["Football"]["legibility_model"], arch=config.dataset["Football"]["legibility_model_arch"], threshold=0.5)
+        track_results = lc.run(images_full_path, config.dataset["Football"]["legibility_model"], arch=config.dataset["Football"]["legibility_model_arch"], threshold=0.0)
         legible = list(np.nonzero(track_results))[0]
         if len(legible) == 0:
             illegible_tracklets.append(directory)
@@ -255,17 +262,56 @@ def train_parseq(args):
         success = os.system(command) == 0
         os.chdir(current_dir)
         print("Done training")
-    else:
+
+    elif args.dataset == 'SoccerNet':
         print("Train PARSeq for Soccer")
-        parseq_dir = config.str_home
-        current_dir = os.getcwd()
-        os.chdir(parseq_dir)
-        data_root = os.path.join(current_dir, config.dataset['SoccerNet']['root_dir'], config.dataset['SoccerNet']['numbers_data'])
-        command = f"conda run -n {config.str_env} python3 train.py +experiment=parseq dataset=real data.root_dir={data_root} trainer.max_epochs=25 " \
-                  f"pretrained=parseq trainer.devices=1 trainer.val_check_interval=1 data.batch_size=128 data.max_label_length=2"
-        success = os.system(command) == 0
-        os.chdir(current_dir)
-        print("Done training")
+        data_root = os.path.join("../data/SoccerNet/soccer_lmdb", config.dataset['SoccerNet']['numbers_data']) # os.path.join(current_dir, config.dataset['SoccerNet']['root_dir'], config.dataset['SoccerNet']['numbers_data'])
+        try:
+            success = run_in_conda(
+                config.str_env,
+                f"{config.str_home}train.py",
+                [
+                    "+experiment=parseq",
+                    "dataset=real",
+                    f"data.root_dir={data_root}",
+                    "trainer.max_epochs=25",
+                    "pretrained=parseq",
+                    "trainer.devices=1",
+                    "trainer.val_check_interval=1",
+                    "data.batch_size=128",
+                    "data.max_label_length=2",
+                ],
+                cwd=os.getcwd(),
+            )
+            print("Done training")
+        except Exception as e:
+            print(f"Failed training: {e}")
+
+    elif args.dataset == 'Football':
+        print("Train PARSeq for Football")
+        data_root = os.path.join(current_dir, config.dataset['Football']['root_dir'], config.dataset['Football']['numbers_data'])
+        try:
+            success = run_in_conda(
+                config.str_env,
+                f"{config.str_home}train.py",
+                [
+                    "+experiment=parseq",
+                    "dataset=real",
+                    f"data.root_dir={data_root}",
+                    "trainer.max_epochs=25",
+                    "pretrained=parseq",
+                    "trainer.devices=1",
+                    "trainer.val_check_interval=1",
+                    "data.batch_size=128",
+                    "data.max_label_length=2",
+                ],
+                cwd=os.getcwd(),
+            )
+            print("Done training")
+        except Exception as e:
+            print(f"Failed training: {e}")
+    else:
+        raise ValueError(f"Unknown dataset: {args.dataset}")
 
 
 def football_pipeline(pipeline):
@@ -687,8 +733,8 @@ if __name__ == '__main__':
                        "str": True,
                        "combine": True,
                        "eval": True,
-                       "play": "28301_39",
-                       "filtered": False,
+                       "play": "28301_161",
+                       "filtered": True,
                        "legibled": True}
             football_pipeline(pipeline)
         else:
