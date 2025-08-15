@@ -117,7 +117,7 @@ dataset = {'SoccerNet':
                 'legibility_data': 'legibility_dataset',
                 'numbers_data': 'numbers_data',
 
-                'legibility_model': "../data/Football/jnp/train/models/legibility_resnet34_football_20250813.pth",
+                'legibility_model': 'models/legibility_resnet34_hockey_20240201.pth',
                 'legibility_model_arch': "resnet34",
 
                 'legibility_model_url':  "https://drive.google.com/uc?id=1RfxINtZ_wCNVF8iZsiMYuFOP7KMgqgDp",

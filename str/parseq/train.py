@@ -16,19 +16,16 @@
 import math
 from pathlib import Path
 
-from omegaconf import DictConfig, open_dict
 import hydra
 from hydra.core.hydra_config import HydraConfig
-
+from omegaconf import DictConfig, open_dict
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, StochasticWeightAveraging
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.strategies import DDPStrategy
 from pytorch_lightning.utilities.model_summary import summarize
-
 from strhub.data.module import SceneTextDataModule
-from strhub.models.base import BaseSystem
-from strhub.models.utils import get_pretrained_weights
+from strhub.models.utils import load_from_checkpoint
 
 
 # Copied from OneCycleLR
@@ -74,10 +71,7 @@ def main(config: DictConfig):
     if config.model.get('perm_mirrored', False):
         assert config.model.perm_num % 2 == 0, 'perm_num should be even if perm_mirrored = True'
 
-    model: BaseSystem = hydra.utils.instantiate(config.model)
-    # If specified, use pretrained weights to initialize the model
-    if config.pretrained is not None:
-        model.load_state_dict(get_pretrained_weights(config.pretrained))
+    model = load_from_checkpoint("models/parseq_epoch=3-step=95-val_accuracy=98.7903-val_NED=99.3952.ckpt")
     print(summarize(model, max_depth=1 if model.hparams.name.startswith('parseq') else 2))
 
     datamodule: SceneTextDataModule = hydra.utils.instantiate(config.data)

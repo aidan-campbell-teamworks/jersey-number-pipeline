@@ -107,7 +107,7 @@ def get_football_legibility_results(use_filtered = False, filter = "sim"):
         track_dir = os.path.join(path_to_images, directory)
         images = filtered[directory] if use_filtered else os.listdir(track_dir)
         images_full_path = [os.path.join(track_dir, x) for x in images]
-        track_results = lc.run(images_full_path, config.dataset["Football"]["legibility_model"], arch=config.dataset["Football"]["legibility_model_arch"], threshold=0.0)
+        track_results = lc.run(images_full_path, config.dataset["Football"]["legibility_model"], arch=config.dataset["Football"]["legibility_model_arch"], threshold=0.5)
         legible = list(np.nonzero(track_results))[0]
         if len(legible) == 0:
             illegible_tracklets.append(directory)
@@ -725,8 +725,8 @@ if __name__ == '__main__':
             args.pipeline = actions
             hockey_pipeline(args)
         elif args.dataset == 'Football':
-            pipeline = {"feat": True,
-                       "filter": True,
+            pipeline = {"feat": False,
+                       "filter": False,
                        "legible": True,
                        "legible_eval": True,
                        "pose": True,
