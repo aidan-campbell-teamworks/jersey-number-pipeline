@@ -70,7 +70,7 @@ class SceneTextDataModule(pl.LightningDataModule):
     def train_dataset(self):
         if self._train_dataset is None:
             transform = self.get_transform(self.img_size, self.augment)
-            root = PurePath(self.root_dir, 'train', self.train_dir)
+            root = PurePath(self.root_dir, 'train')
             self._train_dataset = build_tree_dataset(root, self.charset_train, self.max_label_length,
                                                      self.min_image_dim, self.remove_whitespace, self.normalize_unicode,
                                                      transform=transform)

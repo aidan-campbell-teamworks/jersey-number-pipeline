@@ -289,6 +289,7 @@ def train_parseq(args):
 
     elif args.dataset == 'Football':
         print("Train PARSeq for Football")
+        current_dir = os.getcwd()
         data_root = os.path.join(current_dir, config.dataset['Football']['root_dir'], config.dataset['Football']['numbers_data'])
         try:
             success = run_in_conda(
@@ -305,7 +306,7 @@ def train_parseq(args):
                     "data.batch_size=128",
                     "data.max_label_length=2",
                 ],
-                cwd=os.getcwd(),
+                cwd=current_dir,
             )
             print("Done training")
         except Exception as e:
@@ -733,7 +734,7 @@ if __name__ == '__main__':
                        "str": True,
                        "combine": True,
                        "eval": True,
-                       "play": "28301_161",
+                       "play": "28301_120",
                        "filtered": True,
                        "legibled": True}
             football_pipeline(pipeline)

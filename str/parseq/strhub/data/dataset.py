@@ -36,8 +36,7 @@ def build_tree_dataset(root: Union[PurePath, str], *args, **kwargs):
 
     root = Path(root).absolute()
     log.info(f'dataset root:\t{root}')
-    ds_root = str(root)+"/JerseyNumbers"
-    dataset = LmdbDataset(ds_root, *args, **kwargs)
+    dataset = LmdbDataset(root, *args, **kwargs)
     datasets = [dataset]
     log.info(f'\tlmdb:\tJersey Numbers\tnum samples: {len(dataset)}')
     return ConcatDataset(datasets)
@@ -81,7 +80,7 @@ class LmdbDataset(Dataset):
 
     def _preprocess_labels(self, charset, remove_whitespace, normalize_unicode, max_label_len, min_image_dim):
         charset_adapter = CharsetAdapter(charset)
-        with open(f"{self.root}/football_gt.txt", "r") as f:
+        with open(f"{self.root}/numbers_gt.txt", "r") as f:
             for index, line in enumerate(f):
                 index += 1 # lmdb starts with 1
                 image_path, label = line.strip().split(",")
