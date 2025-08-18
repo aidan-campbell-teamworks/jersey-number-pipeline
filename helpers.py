@@ -185,7 +185,7 @@ def generate_crops(json_file, crops_destination_dir, legible_results, all_legibl
             continue
         if len(filtered_points) == 0:
             #TODO: better approach then skipping
-            print(f"skipping {img_name}, unreliable points")
+            # print(f"skipping {img_name}, unreliable points")
             tr = os.path.basename(img_name).split('_')[0]
             if tr not in skipped.keys():
                 skipped[tr] = 1
@@ -536,6 +536,7 @@ def identify_soccer_balls(image_dir, soccer_ball_list):
 def process_jersey_id_predictions(file_path, useBias=False):
     all_results = {}
     final_results = {}
+    best_frames = {}
     with open(file_path, 'r') as f:
         results_dict = json.load(f)
     for name in results_dict.keys():
@@ -555,6 +556,10 @@ def process_jersey_id_predictions(file_path, useBias=False):
             total_prob = total_prob * float(x)
 
         all_results[tracklet].append([int(value), total_prob])
+        if tracklet not in best_frames or best_frames[tracklet][0][1] < total_prob:
+            best_frames[tracklet] = [(int(tmp[2][:-4]), total_prob)]
+        elif best_frames[tracklet][0][1] == total_prob:
+            best_frames[tracklet].append((int(tmp[2][:-4]), total_prob))
 
     final_full_results = {}
     for tracklet in all_results.keys():
@@ -568,7 +573,7 @@ def process_jersey_id_predictions(file_path, useBias=False):
         final_results[tracklet] = str(int(best_prediction))
         final_full_results[tracklet] = {'label':  str(int(best_prediction)), 'unique': all_unique, 'weights':weights}
 
-    return final_results, final_full_results
+    return final_results, final_full_results, best_frames
 
 THRESHOLD_FOR_TACK_LEGIBILITY = 0
 def is_track_legible(track, illegible_list, legible_tracklets):

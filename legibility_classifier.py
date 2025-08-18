@@ -5,6 +5,7 @@ import copy
 import os
 import time
 
+import boto3
 import numpy as np
 import pandas as pd
 import torch
@@ -22,7 +23,6 @@ try:
         TrackletLegibilityDataset,
         UnlabelledJerseyNumberLegibilityDataset,
     )
-    from jersey_number_pipeline.main import sync_s3
     from jersey_number_pipeline.networks import (
         LegibilityClassifier,
         LegibilityClassifier34,
@@ -45,7 +45,62 @@ except Exception as e:
     )
     from sam.sam import SAM
 
-    from main import sync_s3
+def sync_s3():
+    # set up s3 objects
+    AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
+    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+    session = boto3.Session(aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    s3_resource = session.resource("s3")
+    s3_client = boto3.client("s3")
+    bucket = "cv-training"
+    root_data_dir = "../data/Football/jnp"
+    data = "jersey-number"
+
+    # find all s3 files
+    bucket_obj = s3_resource.Bucket(bucket)
+    print("Collecting s3 files...")
+    s3_files = []
+    for obj in bucket_obj.objects.filter(Prefix=data):
+        if obj.key[-1] != "/":
+            s3_files.append(obj.key)
+    if s3_files[0][0] == "/":  # get rid of leading slash
+        s3_files = [x[1:] for x in s3_files]
+    print(f"Found {len(s3_files)} s3 files")
+
+    # find all local files
+    local_files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(root_data_dir) for f in filenames]
+    if len(local_files) != 0:
+        short_local_files = [data+x.replace(root_data_dir, "") for x in local_files]
+        if short_local_files[0][0] == "/":  # get rid of leading slash
+            short_local_files = [x[1:] for x in short_local_files]
+    else:
+        short_local_files = []
+        new_folders = np.unique([x[: x.rfind("/")] for x in s3_files])
+        for new_folder in new_folders:
+            os.system(f"mkdir -p {os.path.join(root_data_dir, *new_folder.split("/")[1:])} 2> /dev/null")
+    print(f"Found {len(short_local_files)} local files")
+
+    # download new files
+    diff = list(set(s3_files) - set(short_local_files))
+    if len(diff) != 0:
+        print(f"Download {len(diff)} new files")
+        for short_local_file in tqdm(diff, desc=f"Downloading {data}"):
+            s3_filename = short_local_file
+            full_local_file = os.path.join(root_data_dir, *short_local_file.split("/")[1:])
+            os.system(f"mkdir -p {full_local_file[:full_local_file.rfind('/')]} 2> /dev/null")
+            _ = s3_client.download_file(bucket, s3_filename, full_local_file)
+    else:
+        print("No new files to download")
+
+    # generate gt file
+    paths = ["legibility_data/train", "legibility_data/val", "numbers_data/train", "numbers_data/val"]
+    for path in paths:
+        gt_file = os.path.join(root_data_dir, path, "football_gt.txt")
+        if not os.path.exists(gt_file):
+            with open(gt_file, "w") as f:
+                for file in tqdm(os.listdir(os.path.join(root_data_dir, path, "labels")), desc=f"Generating GT file for {path}"):
+                    with open(os.path.join(root_data_dir, path, "labels", file), "r") as f2:
+                        f.write(f2.readline())
 
 
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
@@ -437,7 +492,7 @@ if __name__ == '__main__':
     use_full_validation = (not args.full_val_dir is None) and (len(args.full_val_dir) > 0)
 
     image_dataset_train = JerseyNumberLegibilityDataset(os.path.join(args.data, 'train', 'football_gt.txt'),
-                                                        os.path.join(args.data, 'train', 'images'), 'train', arch=args.arch)
+                                                        os.path.join(args.data, 'train', 'images'), 'train', isBalanced=False, arch=args.arch)
     if not args.train and not args.finetune:
         image_dataset_test = JerseyNumberLegibilityDataset(os.path.join(args.data, 'test', 'test' + annotations_file),
                                                        os.path.join(args.data, 'test', 'images'), 'test', arch=args.arch)
@@ -515,6 +570,7 @@ if __name__ == '__main__':
         timestr = time.strftime("%Y%m%d-%H%M%S")
         save_model_path = f"./experiments/legibility_{args.arch}_{timestr}.pth"
 
+        os.makedirs(os.path.dirname(args.new_trained_model_path), exist_ok=True)
         torch.save(model_ft.state_dict(), args.new_trained_model_path)
 
     else:

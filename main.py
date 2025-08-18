@@ -4,9 +4,9 @@ import os
 import subprocess
 from pathlib import Path
 
+import cv2
 import numpy as np
 from tqdm import tqdm
-import boto3
 
 try:
     from jersey_number_pipeline import configuration as config
@@ -251,63 +251,6 @@ def consolidated_results(image_dir, dict, illegible_path, soccer_ball_list=None)
             dict[t] = int(dict[t])
     return dict
 
-def sync_s3():
-    # set up s3 objects
-    AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
-    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-    session = boto3.Session(aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-    s3_resource = session.resource("s3")
-    s3_client = boto3.client("s3")
-    bucket = "cv-training"
-    root_data_dir = "../data/Football/jnp"
-    data = "jersey-number"
-
-    # find all s3 files
-    bucket_obj = s3_resource.Bucket(bucket)
-    print("Collecting s3 files...")
-    s3_files = []
-    for obj in bucket_obj.objects.filter(Prefix=data):
-        if obj.key[-1] != "/":
-            s3_files.append(obj.key)
-    if s3_files[0][0] == "/":  # get rid of leading slash
-        s3_files = [x[1:] for x in s3_files]
-    print(f"Found {len(s3_files)} s3 files")
-
-    # find all local files
-    local_files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(root_data_dir) for f in filenames]
-    if len(local_files) != 0:
-        short_local_files = [data+x.replace(root_data_dir, "") for x in local_files]
-        if short_local_files[0][0] == "/":  # get rid of leading slash
-            short_local_files = [x[1:] for x in short_local_files]
-    else:
-        short_local_files = []
-        new_folders = np.unique([x[: x.rfind("/")] for x in s3_files])
-        for new_folder in new_folders:
-            os.system(f"mkdir -p {os.path.join(root_data_dir, *new_folder.split("/")[1:])} 2> /dev/null")
-    print(f"Found {len(short_local_files)} local files")
-
-    # download new files
-    diff = list(set(s3_files) - set(short_local_files))
-    if len(diff) != 0:
-        print(f"Download {len(diff)} new files")
-        for short_local_file in tqdm(diff, desc=f"Downloading {data}"):
-            s3_filename = short_local_file
-            full_local_file = os.path.join(root_data_dir, *short_local_file.split("/")[1:])
-            os.system(f"mkdir -p {full_local_file[:full_local_file.rfind('/')]} 2> /dev/null")
-            _ = s3_client.download_file(bucket, s3_filename, full_local_file)
-    else:
-        print("No new files to download")
-
-    # generate gt file
-    paths = ["legibility_data/train", "legibility_data/val", "numbers_data/train", "numbers_data/val"]
-    for path in paths:
-        gt_file = os.path.join(root_data_dir, path, "football_gt.txt")
-        if not os.path.exists(gt_file):
-            with open(gt_file, "w") as f:
-                for file in tqdm(os.listdir(os.path.join(root_data_dir, path, "labels")), desc=f"Generating GT file for {path}"):
-                    with open(os.path.join(root_data_dir, path, "labels", file), "r") as f2:
-                        f.write(f2.readline())
-
 def train_parseq(args):
     if args.dataset == 'Hockey':
         print("Train PARSeq for Hockey")
@@ -349,7 +292,7 @@ def train_parseq(args):
         print("Train PARSeq for Football")
         current_dir = os.getcwd()
         data_root = os.path.join(current_dir, config.dataset['Football']['root_dir'], config.dataset['Football']['numbers_data'])
-        sync_s3()
+        lc.sync_s3()
         try:
             success = run_in_conda(
                 config.str_env,
@@ -439,7 +382,7 @@ def football_pipeline(pipeline):
 
     #3. pass all images through legibililty classifier and record results
     if pipeline["legible"] and success:
-        print("Classifying Legibility:")
+        print(f"Classifying Legibility with model: {config.dataset['Football']['legibility_model']}")
         try:
             legible_dict, illegible_tracklets = get_football_legibility_results(use_filtered=pipeline["filtered"], filter="gauss")
         except Exception as error:
@@ -532,7 +475,7 @@ def football_pipeline(pipeline):
 
     #6. run STR system on all crops
     if pipeline["str"] and success:
-        print("Predict numbers")
+        print(f"Predict numbers with model: {config.dataset['Football']['str_model']}")
         # command = f"conda run -n {config.str_env} python3 str.py  {config.dataset["Football"]["str_model"]}\
         #     --data_root={crops_dir} --batch_size=1 --inference --result_file {str_result_file}"
         # success = os.system(command) == 0
@@ -558,7 +501,7 @@ def football_pipeline(pipeline):
     if pipeline["combine"] and success:
         analysis_results = None
         #read predicted results, stack unique predictions, sum confidence scores for each, choose argmax
-        results_dict, analysis_results = helpers.process_jersey_id_predictions(str_result_file, useBias=True)
+        results_dict, analysis_results, best_frames = helpers.process_jersey_id_predictions(str_result_file, useBias=True)
         #results_dict, analysis_results = helpers.process_jersey_id_predictions_raw(str_result_file, useTS=True)
         #results_dict, analysis_results = helpers.process_jersey_id_predictions_bayesian(str_result_file, useTS=True, useBias=True, useTh=True)
 
@@ -579,6 +522,11 @@ def football_pipeline(pipeline):
         print(len(consolidated_dict.keys()), len(gt_dict.keys()))
         helpers.evaluate_results(consolidated_dict, gt_dict, full_results = analysis_results)
 
+    #9 save best frames
+    for tracklet in best_frames:
+        frame_num = best_frames[tracklet][0][0]
+        img = cv2.imread(os.path.join(image_dir, f"player_{tracklet}", f"{tracklet}_frame_{frame_num}.jpg"))
+        cv2.imwrite(os.path.join(config.dataset["Football"]["working_dir"], "best_frames", f"{tracklet}_frame_{frame_num}.jpg"), img)
 
 def hockey_pipeline(args):
     # actions = {"legible": True,
@@ -734,7 +682,7 @@ def soccer_net_pipeline(args):
         #8. combine tracklet results
         analysis_results = None
         #read predicted results, stack unique predictions, sum confidence scores for each, choose argmax
-        results_dict, analysis_results = helpers.process_jersey_id_predictions(str_result_file, useBias=True)
+        results_dict, analysis_results, _ = helpers.process_jersey_id_predictions(str_result_file, useBias=True)
         #results_dict, analysis_results = helpers.process_jersey_id_predictions_raw(str_result_file, useTS=True)
         #results_dict, analysis_results = helpers.process_jersey_id_predictions_bayesian(str_result_file, useTS=True, useBias=True, useTh=True)
 
@@ -793,7 +741,7 @@ if __name__ == '__main__':
                        "str": True,
                        "combine": True,
                        "eval": True,
-                       "play": "28301_120",
+                       "play": "28301_39",
                        "filtered": True,
                        "legibled": True}
             football_pipeline(pipeline)
