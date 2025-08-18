@@ -274,28 +274,28 @@ def sync_s3():
     print(f"Found {len(s3_files)} s3 files")
 
     # find all local files
-    full_data_dir = os.path.join(root_data_dir, data)
-    local_files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(full_data_dir) for f in filenames]
+    local_files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(root_data_dir) for f in filenames]
     if len(local_files) != 0:
-        short_local_files = [x.replace(root_data_dir, "") for x in local_files]
+        short_local_files = [data+x.replace(root_data_dir, "") for x in local_files]
         if short_local_files[0][0] == "/":  # get rid of leading slash
             short_local_files = [x[1:] for x in short_local_files]
-        omit_dirs = ["/train/", "/test/", "/val/"]  # ignore train/val/test folders
-        for od in omit_dirs:
-            short_local_files = [x for x in short_local_files if od not in x]
     else:
         short_local_files = []
         new_folders = np.unique([x[: x.rfind("/")] for x in s3_files])
         for new_folder in new_folders:
-            os.system(f"mkdir -p {os.path.join(root_data_dir, new_folder)} 2> /dev/null")
+            os.system(f"mkdir -p {os.path.join(root_data_dir, *new_folder.split("/")[1:])} 2> /dev/null")
     print(f"Found {len(short_local_files)} local files")
 
     # download new files
     diff = list(set(s3_files) - set(short_local_files))
+    if len(diff) == 0:
+        print("No new files to download")
+        return
+
     print(f"Download {len(diff)} new files")
     for short_local_file in tqdm(diff, desc=f"Downloading {data}"):
         s3_filename = short_local_file
-        full_local_file = os.path.join(root_data_dir, short_local_file)
+        full_local_file = os.path.join(root_data_dir, *short_local_file.split("/")[1:])
         os.system(f"mkdir -p {full_local_file[:full_local_file.rfind('/')]} 2> /dev/null")
         _ = s3_client.download_file(bucket, s3_filename, full_local_file)
 
