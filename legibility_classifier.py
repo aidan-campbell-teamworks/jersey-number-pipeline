@@ -22,6 +22,7 @@ try:
         TrackletLegibilityDataset,
         UnlabelledJerseyNumberLegibilityDataset,
     )
+    from jersey_number_pipeline.main import sync_s3
     from jersey_number_pipeline.networks import (
         LegibilityClassifier,
         LegibilityClassifier34,
@@ -43,6 +44,8 @@ except Exception as e:
         LegibilitySimpleClassifier,
     )
     from sam.sam import SAM
+
+    from main import sync_s3
 
 
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
@@ -429,11 +432,12 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    sync_s3()
     annotations_file = '_gt.txt'
     use_full_validation = (not args.full_val_dir is None) and (len(args.full_val_dir) > 0)
 
-    image_dataset_train = JerseyNumberLegibilityDataset(os.path.join(args.data, 'train', 'train' + annotations_file),
-                                                        os.path.join(args.data, 'train', 'images'), 'train', isBalanced=True, arch=args.arch)
+    image_dataset_train = JerseyNumberLegibilityDataset(os.path.join(args.data, 'train', 'football_gt.txt'),
+                                                        os.path.join(args.data, 'train', 'images'), 'train', arch=args.arch)
     if not args.train and not args.finetune:
         image_dataset_test = JerseyNumberLegibilityDataset(os.path.join(args.data, 'test', 'test' + annotations_file),
                                                        os.path.join(args.data, 'test', 'images'), 'test', arch=args.arch)
@@ -460,7 +464,7 @@ if __name__ == '__main__':
         dataset_sizes = {x: len(image_datasets[x]) for x in ['test']}
         dataloaders = {'test': dataloader_test}
     else:
-        image_dataset_val = JerseyNumberLegibilityDataset(os.path.join(args.data, 'val', 'val' + annotations_file),
+        image_dataset_val = JerseyNumberLegibilityDataset(os.path.join(args.data, 'val', 'football_gt.txt'),
                                                           os.path.join(args.data, 'val', 'images'), 'val', arch=args.arch)
         dataloader_val = torch.utils.data.DataLoader(image_dataset_val, batch_size=4,
                                                      shuffle=True, num_workers=4)

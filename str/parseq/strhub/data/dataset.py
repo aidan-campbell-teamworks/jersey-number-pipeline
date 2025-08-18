@@ -80,7 +80,7 @@ class LmdbDataset(Dataset):
 
     def _preprocess_labels(self, charset, remove_whitespace, normalize_unicode, max_label_len, min_image_dim):
         charset_adapter = CharsetAdapter(charset)
-        with open(f"{self.root}/numbers_gt.txt", "r") as f:
+        with open(f"{self.root}/football_gt.txt", "r") as f:
             for index, line in enumerate(f):
                 index += 1 # lmdb starts with 1
                 image_path, label = line.strip().split(",")
@@ -103,6 +103,31 @@ class LmdbDataset(Dataset):
                 self.image_paths.append(image_path)
                 self.filtered_index_list.append(index)
         return len(self.labels)
+        # index = 0
+        # for file in os.listdir(f"{self.root}/labels"):
+        #     with open(f"{self.root}/labels/{file}", "r") as f:
+        #         index += 1 # lmdb starts with 1
+        #         line = f.readline()
+        #         image_path, label = line.strip().split(",")
+                
+        #         # Normally, whitespace is removed from the labels.
+        #         if remove_whitespace:
+        #             label = ''.join(label.split())
+        #         # Normalize unicode composites (if any) and convert to compatible ASCII characters
+        #         if normalize_unicode:
+        #             label = unicodedata.normalize('NFKD', label).encode('ascii', 'ignore').decode()
+        #         # Filter by length before removing unsupported characters. The original label might be too long.
+        #         if len(label) > max_label_len:
+        #             continue
+        #         label = charset_adapter(label)
+        #         # We filter out samples which don't contain any supported characters
+        #         if not label:
+        #             continue
+
+        #         self.labels.append(label)
+        #         self.image_paths.append(image_path)
+        #         self.filtered_index_list.append(index)
+        # return len(self.labels)
 
     def __len__(self):
         return self.num_samples

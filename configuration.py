@@ -117,10 +117,10 @@ dataset = {'SoccerNet':
                 'legibility_data': 'legibility_dataset',
                 'numbers_data': 'numbers_data',
 
-                'legibility_model': 'models/legibility_resnet34_hockey_20240201.pth',
+                'legibility_model': "models/legibility_resnet34_hockey_20240201.pth",
                 'legibility_model_arch': "resnet34",
 
-                'legibility_model_url':  "https://drive.google.com/uc?id=1RfxINtZ_wCNVF8iZsiMYuFOP7KMgqgDp",
+                'legibility_model_url': "https://drive.google.com/uc?id=1RfxINtZ_wCNVF8iZsiMYuFOP7KMgqgDp",
                 'pose_model_url': 'https://drive.google.com/uc?id=1A3ftF118IcxMn_QONndR-8dPWpf7XzdV',
                 'str_model': 'models/parseq_epoch=3-step=95-val_accuracy=98.7903-val_NED=99.3952.ckpt',
 

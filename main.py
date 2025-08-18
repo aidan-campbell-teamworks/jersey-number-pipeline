@@ -288,16 +288,25 @@ def sync_s3():
 
     # download new files
     diff = list(set(s3_files) - set(short_local_files))
-    if len(diff) == 0:
+    if len(diff) != 0:
+        print(f"Download {len(diff)} new files")
+        for short_local_file in tqdm(diff, desc=f"Downloading {data}"):
+            s3_filename = short_local_file
+            full_local_file = os.path.join(root_data_dir, *short_local_file.split("/")[1:])
+            os.system(f"mkdir -p {full_local_file[:full_local_file.rfind('/')]} 2> /dev/null")
+            _ = s3_client.download_file(bucket, s3_filename, full_local_file)
+    else:
         print("No new files to download")
-        return
 
-    print(f"Download {len(diff)} new files")
-    for short_local_file in tqdm(diff, desc=f"Downloading {data}"):
-        s3_filename = short_local_file
-        full_local_file = os.path.join(root_data_dir, *short_local_file.split("/")[1:])
-        os.system(f"mkdir -p {full_local_file[:full_local_file.rfind('/')]} 2> /dev/null")
-        _ = s3_client.download_file(bucket, s3_filename, full_local_file)
+    # generate gt file
+    paths = ["legibility_data/train", "legibility_data/val", "numbers_data/train", "numbers_data/val"]
+    for path in paths:
+        gt_file = os.path.join(root_data_dir, path, "football_gt.txt")
+        if not os.path.exists(gt_file):
+            with open(gt_file, "w") as f:
+                for file in tqdm(os.listdir(os.path.join(root_data_dir, path, "labels")), desc=f"Generating GT file for {path}"):
+                    with open(os.path.join(root_data_dir, path, "labels", file), "r") as f2:
+                        f.write(f2.readline())
 
 def train_parseq(args):
     if args.dataset == 'Hockey':
@@ -792,5 +801,3 @@ if __name__ == '__main__':
             print("Unknown dataset")
     else:
         train_parseq(args)
-
-
