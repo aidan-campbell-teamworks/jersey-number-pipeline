@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -347,6 +348,8 @@ def football_pipeline(pipeline):
                                    config.dataset["Football"]["jersey_id_result"])
     final_results_path = os.path.join(config.dataset["Football"]["working_dir"],
                                       config.dataset["Football"]["final_result"])
+    best_frames_dir = os.path.join(config.dataset["Football"]["working_dir"], 
+                             config.dataset["Football"]["best_frames"])
     
     # 1. generate and store features for each image in each tracklet
     if pipeline["feat"]:
@@ -354,6 +357,8 @@ def football_pipeline(pipeline):
         # command = f"conda run -n {config.reid_env} python3 {config.reid_script} --tracklets_folder {image_dir} --output_folder {features_dir}"
         # success = os.system(command) == 0
         try:
+            if os.path.exists(features_dir):
+                shutil.rmtree(features_dir)
             Path(features_dir).mkdir(parents=True, exist_ok=True)
             success = run_in_conda(
                 config.reid_env,
@@ -523,10 +528,12 @@ def football_pipeline(pipeline):
         helpers.evaluate_results(consolidated_dict, gt_dict, full_results = analysis_results)
 
     #9 save best frames
+    Path(best_frames_dir).mkdir(parents=True, exist_ok=True)
     for tracklet in best_frames:
         frame_num = best_frames[tracklet][0][0]
         img = cv2.imread(os.path.join(image_dir, f"player_{tracklet}", f"{tracklet}_frame_{frame_num}.jpg"))
-        cv2.imwrite(os.path.join(config.dataset["Football"]["working_dir"], "best_frames", f"{tracklet}_frame_{frame_num}.jpg"), img)
+        cv2.imwrite(os.path.join(best_frames_dir, f"{tracklet}_frame_{frame_num}.jpg"), img)
+    print("Finished Football Pipeline")
 
 def hockey_pipeline(args):
     # actions = {"legible": True,

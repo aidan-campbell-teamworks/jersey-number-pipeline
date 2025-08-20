@@ -1,16 +1,17 @@
-import json
-from copy import deepcopy
-import cv2
-import os
-import json
-import numpy as np
-from tqdm import tqdm
 import argparse
-import pandas as pd
+import json
+import os
 import random
 import shutil
+from copy import deepcopy
 from pathlib import Path
+
+import cv2
+import numpy as np
+import pandas as pd
 from scipy.special import softmax as softmax
+from sklearn.utils.extmath import weighted_mode
+from tqdm import tqdm
 
 json_img_template = { "id": 0,
             "file_name": "",
@@ -266,6 +267,12 @@ def find_best_prediction(results, useBias=False):
     best_prediction = unique_predictions[index_of_best] if best_weight > SUM_THRESHOLD else -1
     return best_prediction, unique_predictions, weights
 
+def find_best_prediction_weighted(results, useBias=False):
+    predictions, weights = results[:, 0], results[:, 1]
+    unique_predictions = np.unique(predictions)
+    bias = np.array([get_bias(pred) for pred in predictions])
+    best_prediction, score = weighted_mode(predictions, weights * bias)
+    return best_prediction, unique_predictions, weights
 
 token_list = 'E0123456789'
 # Test calibration
@@ -568,6 +575,12 @@ def process_jersey_id_predictions(file_path, useBias=False):
         results = np.array(all_results[tracklet])
 
         best_prediction, all_unique, weights = find_best_prediction(results, useBias=useBias)
+        best_prediction_weighted, all_unique_weighted, weights_weighted = find_best_prediction_weighted(results, useBias=useBias)
+        best_prediction_weighted = best_prediction_weighted[0]
+
+        if int(best_prediction) != int(best_prediction_weighted):
+            print(f"Tracklet {tracklet} has different predictions: {best_prediction} and {best_prediction_weighted}, using {max(best_prediction, best_prediction_weighted)}")
+            best_prediction = max(best_prediction, best_prediction_weighted)
 
         #best_prediction, all_unique, weights = find_best_prediction_with_vector(results)
         final_results[tracklet] = str(int(best_prediction))
