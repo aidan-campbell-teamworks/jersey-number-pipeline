@@ -66,7 +66,7 @@ data_transforms = {
 class JerseyNumberDataset(Dataset):
     def __init__(self, annotations_file, img_dir, mode='train'):
         self.transform = data_transforms[mode]
-        self.img_labels = pd.read_csv(annotations_file)
+        self.img_labels = pd.read_csv(annotations_file, header=None)
         unqiue_ids = np.unique(self.img_labels.iloc[:, 1].to_numpy())
         print(f"Datafile:{annotations_file}, number of labels:{len(self.img_labels)}, unique ids: {len(unqiue_ids)}")
         self.img_dir = img_dir
@@ -85,7 +85,7 @@ class JerseyNumberDataset(Dataset):
 class JerseyNumberMultitaskDataset(Dataset):
     def __init__(self, annotations_file, img_dir, mode='train'):
         self.transform = data_transforms[mode]
-        self.img_labels = pd.read_csv(annotations_file)
+        self.img_labels = pd.read_csv(annotations_file, header=None)
         unqiue_ids = np.unique(self.img_labels.iloc[:, 1].to_numpy())
         print(f"Datafile:{annotations_file}, number of labels:{len(self.img_labels)}, unique ids: {len(unqiue_ids)}")
         self.img_dir = img_dir
@@ -162,7 +162,7 @@ class JerseyNumberLegibilityDataset(Dataset):
         if 'resnet' in arch:
             arch = 'resnet'
         self.transform = data_transforms[mode][arch]
-        self.img_labels = pd.read_csv(annotations_file)
+        self.img_labels = pd.read_csv(annotations_file, header=None)
         if isBalanced:
             legible =self.img_labels[self.img_labels.iloc[:,1]==1]
             count_legible = len(legible)

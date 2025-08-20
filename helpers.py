@@ -593,7 +593,7 @@ def is_track_legible(track, illegible_list, legible_tracklets):
     if track in illegible_list:
         return False
     try:
-        if len(legible_tracklets[track]) <= THRESHOLD_FOR_TACK_LEGIBILITY:
+        if len(legible_tracklets[f"player_{track}"]) <= THRESHOLD_FOR_TACK_LEGIBILITY:
             return False
     except KeyError:
         return False
@@ -836,5 +836,3 @@ if __name__ == '__main__':
         generate_different_split(args.source, args.target)
     else:
         generate_crops_based(args.source, args.target, splits)
-
-

@@ -96,7 +96,7 @@ def sync_s3():
     paths = ["legibility_data/train", "legibility_data/val", "numbers_data/train", "numbers_data/val"]
     for path in paths:
         gt_file = os.path.join(root_data_dir, path, "football_gt.txt")
-        if not os.path.exists(gt_file):
+        if not os.path.exists(gt_file) or len(diff) > 0:
             with open(gt_file, "w") as f:
                 for file in tqdm(os.listdir(os.path.join(root_data_dir, path, "labels")), desc=f"Generating GT file for {path}"):
                     with open(os.path.join(root_data_dir, path, "labels", file), "r") as f2:
@@ -177,12 +177,11 @@ def train_model_with_sam(model, criterion, optimizer, num_epochs=25, ):
     since = time.time()
 
     best_model_wts = copy.deepcopy(model.state_dict())
+    best_epoch = 0
+    best_loss = 0.0
     best_acc = 0.0
 
-    for epoch in range(num_epochs):
-        print(f'Epoch {epoch}/{num_epochs - 1}')
-        print('-' * 10)
-
+    for epoch in (pbar := tqdm(range(num_epochs))):
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
             if phase == 'train':
@@ -227,18 +226,17 @@ def train_model_with_sam(model, criterion, optimizer, num_epochs=25, ):
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects.double() / dataset_sizes[phase]
 
-            print(f'{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}')
-
             # deep copy the model
-            if phase == 'val' and epoch_acc > best_acc:
+            if phase == 'val' and (epoch_acc > best_acc or (epoch_acc == best_acc and epoch_loss < best_loss)):
+                best_epoch = epoch
+                best_loss = epoch_loss
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
-
-        print()
+                pbar.set_description(f"Best Epoch (#{best_epoch}) Loss: {best_loss:.4f} Acc: {best_acc:.4f}")
 
     time_elapsed = time.time() - since
     print(f'Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s')
-    print(f'Best val Acc: {best_acc:4f}')
+    print(f'Final Loss: {epoch_loss:4f} Acc: {epoch_acc:4f}')
 
     # load best model weights
     model.load_state_dict(best_model_wts)
@@ -492,7 +490,7 @@ if __name__ == '__main__':
     use_full_validation = (not args.full_val_dir is None) and (len(args.full_val_dir) > 0)
 
     image_dataset_train = JerseyNumberLegibilityDataset(os.path.join(args.data, 'train', 'football_gt.txt'),
-                                                        os.path.join(args.data, 'train', 'images'), 'train', isBalanced=False, arch=args.arch)
+                                                        os.path.join(args.data, 'train', 'images'), 'train', isBalanced=True, arch=args.arch)
     if not args.train and not args.finetune:
         image_dataset_test = JerseyNumberLegibilityDataset(os.path.join(args.data, 'test', 'test' + annotations_file),
                                                        os.path.join(args.data, 'test', 'images'), 'test', arch=args.arch)
@@ -558,7 +556,7 @@ if __name__ == '__main__':
             if use_full_validation:
                 model_ft = train_model_with_sam_and_full_val(model_ft, criterion, optimizer_ft, num_epochs=10)
             else:
-                model_ft = train_model_with_sam(model_ft, criterion, optimizer_ft, num_epochs=10)
+                model_ft = train_model_with_sam(model_ft, criterion, optimizer_ft, num_epochs=25)
         else:
             optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
 
