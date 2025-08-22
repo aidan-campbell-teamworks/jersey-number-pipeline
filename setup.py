@@ -164,6 +164,37 @@ def download_data(root_dir):
         # remove .DS_Store files on MacOS
         os.system(f"find {os.path.join(root_dir, "data", "SoccerNet")} -name '.DS_Store' -type f -delete")
 
+def setup_common(root_dir):
+    setup_sam(root_dir)
+    setup_pose(root_dir)
+    download_models_common(root_dir)
+    setup_str(root_dir)
+
+def setup_football(root_dir):
+    setup_common(root_dir)
+    setup_reid(root_dir)
+    download_models(root_dir, 'Football')
+
+def setup_hockey(root_dir):
+    setup_common(root_dir)
+    download_models(root_dir, 'Hockey')
+
+def setup_soccer(root_dir, data=False):
+    setup_common(root_dir)
+    setup_reid(root_dir)
+    download_models(root_dir, 'SoccerNet')
+    if data:
+        download_data(root_dir)
+
+def setup_all(root_dir, data=False):
+    setup_common(root_dir)
+    setup_reid(root_dir)
+    download_models(root_dir, 'SoccerNet')
+    download_models(root_dir, 'Hockey')
+    download_models(root_dir, 'Football')
+    if data:
+        download_data(root_dir)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('dataset', default='all', help="Options: all, SoccerNet, Hockey, Football")
@@ -172,24 +203,11 @@ if __name__ == '__main__':
 
     root_dir = os.getcwd()
 
-    # common for both datasets
-    setup_sam(root_dir)
-    setup_pose(root_dir)
-    download_models_common(root_dir)
-    setup_str(root_dir)
-
     if args.dataset == 'SoccerNet':
-        setup_reid(root_dir)
-        download_models(root_dir, 'SoccerNet')
-        # download_data(root_dir)
+        setup_soccer(root_dir)#, data=True)
     elif args.dataset == 'Hockey':
-        download_models(root_dir, 'Hockey')
+        setup_hockey(root_dir)
     elif args.dataset == 'Football':
-        setup_reid(root_dir)
-        download_models(root_dir, 'Football')
+        setup_football(root_dir)
     else:
-        setup_reid(root_dir)
-        download_models(root_dir, 'SoccerNet')
-        download_models(root_dir, 'Hockey')
-        download_models(root_dir, 'Football')
-        # download_data(root_dir)
+        setup_all(root_dir)#, data=True)

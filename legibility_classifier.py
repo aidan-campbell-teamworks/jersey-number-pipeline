@@ -68,7 +68,7 @@ def sync_s3():
     print(f"Found {len(s3_files)} s3 files")
 
     # find all local files
-    local_files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(root_data_dir) for f in filenames]
+    local_files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(root_data_dir+"/legibility_data") for f in filenames] + [os.path.join(dp, f) for dp, dn, filenames in os.walk(root_data_dir+"/numbers_data") for f in filenames]
     if len(local_files) != 0:
         short_local_files = [data+x.replace(root_data_dir, "") for x in local_files]
         if short_local_files[0][0] == "/":  # get rid of leading slash
@@ -78,7 +78,7 @@ def sync_s3():
         new_folders = np.unique([x[: x.rfind("/")] for x in s3_files])
         for new_folder in new_folders:
             os.system(f"mkdir -p {os.path.join(root_data_dir, *new_folder.split("/")[1:])} 2> /dev/null")
-    print(f"Found {len(short_local_files)} local files")
+    print(f"Found {len(short_local_files)-4} local files")
 
     # download new files
     diff = list(set(s3_files) - set(short_local_files))
@@ -490,7 +490,7 @@ if __name__ == '__main__':
     use_full_validation = (not args.full_val_dir is None) and (len(args.full_val_dir) > 0)
 
     image_dataset_train = JerseyNumberLegibilityDataset(os.path.join(args.data, 'train', 'football_gt.txt'),
-                                                        os.path.join(args.data, 'train', 'images'), 'train', isBalanced=True, arch=args.arch)
+                                                        os.path.join(args.data, 'train', 'images'), 'train', isBalanced=False, arch=args.arch)
     if not args.train and not args.finetune:
         image_dataset_test = JerseyNumberLegibilityDataset(os.path.join(args.data, 'test', 'test' + annotations_file),
                                                        os.path.join(args.data, 'test', 'images'), 'test', arch=args.arch)

@@ -165,8 +165,9 @@ def generate_crops_from_detections(det_path, crops_destination_dir, legible_resu
         cv2.imwrite(os.path.join(crops_destination_dir, base_name), crop)
 
 # crop torso based on joints and save cropped images
-def generate_crops(json_file, crops_destination_dir, legible_results, all_legible = None):
-    if all_legible is None:
+def generate_crops(json_file, crops_destination_dir, legible_results=None, all_legible = None):
+    use_legible = legible_results is not None or all_legible is not None
+    if all_legible is None and use_legible:
         all_legible = []
         for key in legible_results.keys():
             for entry in legible_results[key]:
@@ -182,7 +183,7 @@ def generate_crops(json_file, crops_destination_dir, legible_results, all_legibl
         filtered_points = get_points(entry)
         img_name = entry["img_name"]
 
-        if not os.path.basename(img_name) in all_legible:
+        if use_legible and os.path.basename(img_name) not in all_legible:
             continue
         if len(filtered_points) == 0:
             #TODO: better approach then skipping
@@ -590,7 +591,7 @@ def process_jersey_id_predictions(file_path, useBias=False):
 
 THRESHOLD_FOR_TACK_LEGIBILITY = 0
 def is_track_legible(track, illegible_list, legible_tracklets):
-    if track in illegible_list:
+    if f"player_{track}" in illegible_list:
         return False
     try:
         if len(legible_tracklets[f"player_{track}"]) <= THRESHOLD_FOR_TACK_LEGIBILITY:
